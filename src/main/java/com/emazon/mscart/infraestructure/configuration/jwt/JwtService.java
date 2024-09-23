@@ -31,7 +31,6 @@ public class JwtService {
         return getClaimsFromToken(token).getSubject();
     }
 
-    // Extraer los roles/authorities del token
     public List<GrantedAuthority> getAuthoritiesFromToken(String token) {
         Claims claims = getClaimsFromToken(token);
         String authorities = (String) claims.get("authorities");
@@ -40,12 +39,18 @@ public class JwtService {
                 .collect(Collectors.toList());
     }
 
+    public Long getUserIdFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        return claims.get("userId", Long.class);
+    }
+
     private Claims getClaimsFromToken(String token) {
         return Jwts.parser()
                 .setSigningKey(SECRET_KEY)
                 .parseClaimsJws(token)
                 .getBody();
     }
+
 
     public UserDetails getUserDetails(String token) {
         String username = getUsernameFromToken(token);
