@@ -1,5 +1,9 @@
 package com.emazon.mscart.infraestructure.exception_handler;
 
+import com.emazon.mscart.domain.exception.ArticleNotFoundException;
+import com.emazon.mscart.domain.exception.CategoryLimitExceededException;
+import com.emazon.mscart.domain.exception.OutOfStockException;
+import com.emazon.mscart.domain.util.OutOfStockResponse;
 import com.emazon.mscart.infraestructure.Constants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -40,5 +44,25 @@ public class ControllerAdvisor {
             errors.put(propertyPath, errorMessage);
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+    }
+
+    @ExceptionHandler(ArticleNotFoundException.class)
+    public ResponseEntity<ExceptionResponse> handleArticleNotFoundException(ArticleNotFoundException exception) {
+        return ResponseEntity.badRequest().body(new ExceptionResponse(
+                String.format(Constants.ARTICLE_NOT_FOUND_EXCEPTION),
+                HttpStatus.NOT_FOUND.toString(), LocalDateTime.now()));
+    }
+
+    @ExceptionHandler(CategoryLimitExceededException.class)
+    public ResponseEntity<ExceptionResponse> handleCategoryLimitExceededException(CategoryLimitExceededException exception) {
+        return ResponseEntity.badRequest().body(new ExceptionResponse(
+                String.format(Constants.LIMIT_CATEGORIES_EXCEPTION),
+                HttpStatus.BAD_REQUEST.toString(), LocalDateTime.now()));
+    }
+
+
+    @ExceptionHandler(OutOfStockException.class)
+    public ResponseEntity<OutOfStockResponse> handleOutOfStock(OutOfStockException ex) {
+        return new ResponseEntity<>(ex.getOutOfStockResponse(), HttpStatus.BAD_REQUEST);
     }
 }
