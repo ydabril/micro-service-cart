@@ -25,7 +25,7 @@ public class CartRestController {
     private final IArticleCartServicePort articleCartServicePort;
     private final IArticleCartRequestMapper articleCartRequestMapper;
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('CLIENT')")
     @Operation(summary = "Save an article", description = "Add a new article in the cart.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Article successfully created"),
@@ -41,9 +41,15 @@ public class CartRestController {
     }
 
     @PreAuthorize("hasRole('CLIENT')")
-    @GetMapping("/delete-article/{id}")
-    public String deleteArticleCart(@PathVariable Long id) {
-        return "eliminar articulo del carrito";
+    @Operation(summary = "Delete an article from cart", description = "Delete a article in the cart.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Article successfully deleted"),
+            @ApiResponse(responseCode = "400", description = "Bad request", content = @Content(schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = String.class)))
+    })
+    @DeleteMapping("/delete-article/{id}")
+    public void deleteArticleCart(@PathVariable Long id) {
+        articleCartServicePort.deleteArticleCart(id);
     }
 
     @PreAuthorize("hasRole('CLIENT')")

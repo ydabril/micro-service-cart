@@ -12,4 +12,7 @@ public interface IArticleCartPersistencePort {
 
     List<ArticleCart> findByUserId(Long userId);
     void updateAll(List<ArticleCart> articleCarts);
+    Optional<ArticleCart> findById(Long id);
+
+    void deleteArticleCart(Long id);
 }

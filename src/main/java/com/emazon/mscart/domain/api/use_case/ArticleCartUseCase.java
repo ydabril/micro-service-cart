@@ -39,6 +39,17 @@ public class ArticleCartUseCase  implements IArticleCartServicePort {
         saveUpdateDate(userId);
     }
 
+    @Override
+    public void deleteArticleCart(Long id) {
+        Optional<ArticleCart> articleCartOptional = articleCartPersistencePort.findById(id);
+
+        if (articleCartOptional.isEmpty()) {
+            throw new ArticleNotFoundException();
+        }
+
+        articleCartPersistencePort.deleteArticleCart(id);
+    }
+
     private Article getValidatedArticle(Long articleId) {
         Optional<Article> articleOptional = articlePersistencePort.getArticleById(articleId);
 
