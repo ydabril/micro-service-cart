@@ -4,14 +4,13 @@ import com.emazon.mscart.domain.api.IArticleCartServicePort;
 import com.emazon.mscart.domain.exception.ArticleNotFoundException;
 import com.emazon.mscart.domain.exception.CategoryLimitExceededException;
 import com.emazon.mscart.domain.exception.OutOfStockException;
-import com.emazon.mscart.domain.model.Article;
-import com.emazon.mscart.domain.model.ArticleCart;
-import com.emazon.mscart.domain.model.Category;
+import com.emazon.mscart.domain.model.*;
 import com.emazon.mscart.domain.spi.IArticleCartPersistencePort;
 import com.emazon.mscart.domain.spi.IArticlePersistencePort;
 import com.emazon.mscart.domain.util.DomainConstants;
 import com.emazon.mscart.domain.util.OutOfStockResponse;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +26,8 @@ public class ArticleCartUseCase  implements IArticleCartServicePort {
         this.articlePersistencePort = articlePersistencePort;
     }
     @Override
-    public void addArticleCart(ArticleCart articleCart, Long userId) {
+    public void addArticleCart(ArticleCart articleCart) {
+        Long userId = articleCartPersistencePort.getUserId();
         Article article = getValidatedArticle(articleCart.getArticleId());
         String nextRestockDate = articlePersistencePort.getEstimatedNextDate(articleCart.getArticleId()).toString();
 
@@ -41,13 +41,75 @@ public class ArticleCartUseCase  implements IArticleCartServicePort {
 
     @Override
     public void deleteArticleCart(Long id) {
-        Optional<ArticleCart> articleCartOptional = articleCartPersistencePort.findById(id);
+        Long userId = articleCartPersistencePort.getUserId();
+        articleCartPersistencePort.deleteArticleCart(id);
+        saveUpdateDate(userId);
+    }
 
-        if (articleCartOptional.isEmpty()) {
-            throw new ArticleNotFoundException();
+    @Override
+    public Pagination<Article> getArticlesCart(ArticleFilter articleFilter) {
+        Long userId = articleCartPersistencePort.getUserId();
+
+        List<Long> articleIds = articleCartPersistencePort.getArticleIdsByUser(userId);
+        articleFilter.setArticleIds(articleIds);
+
+        Pagination<Article> pagination = articlePersistencePort.getArticlesCart(articleFilter);
+        articleFilter.setPage(0);
+        articleFilter.setSize(100);
+        Pagination<Article> paginationAll = articlePersistencePort.getArticlesCart(articleFilter);
+
+        List<ArticleCart> cartArticles = articleCartPersistencePort.findByUserId(userId);
+
+        calculateTotalPriceAndUpdateArticles(pagination, cartArticles);
+        Long totalPrice = calculateTotalPrice(paginationAll, cartArticles);
+
+        pagination.setTotalPrice(totalPrice);
+
+        return pagination;
+    }
+
+
+    private Long calculateTotalPrice(Pagination<Article> pagination, List<ArticleCart> cartArticles) {
+        Long totalPrice = DomainConstants.TOTAL_PRICE_DEFAULT;
+
+        for (Article article : pagination.getList()) {
+            Optional<ArticleCart> articleCartOptional = findArticleInCart(article, cartArticles);
+
+            if (articleCartOptional.isPresent()) {
+                ArticleCart articleCart = articleCartOptional.get();
+
+                totalPrice += article.getPrice().multiply(BigDecimal.valueOf(articleCart.getQuantity())).longValue();
+            }
         }
 
-        articleCartPersistencePort.deleteArticleCart(id);
+        return totalPrice;
+    }
+    private void calculateTotalPriceAndUpdateArticles(Pagination<Article> pagination, List<ArticleCart> cartArticles) {
+        for (Article article : pagination.getList()) {
+            Optional<ArticleCart> articleCartOptional = findArticleInCart(article, cartArticles);
+
+            if (articleCartOptional.isPresent()) {
+                ArticleCart articleCart = articleCartOptional.get();
+
+                updateArticleStockAndQuantity(article, articleCart);
+
+                if (article.getStock() == DomainConstants.NOT_STOCK_NUMBER) {
+                    article.setRestockNextDate(articlePersistencePort.getEstimatedNextDate(article.getId()));
+                }
+            }
+        }
+    }
+
+    private Optional<ArticleCart> findArticleInCart(Article article, List<ArticleCart> cartArticles) {
+        return cartArticles.stream()
+                .filter(cart -> cart.getArticleId().equals(article.getId()))
+                .findFirst();
+    }
+
+    private void updateArticleStockAndQuantity(Article article, ArticleCart articleCart) {
+        article.setStock(article.getQuantity());
+        article.setQuantity(articleCart.getQuantity());
+        article.setCartId(articleCart.getId());
     }
 
     private Article getValidatedArticle(Long articleId) {

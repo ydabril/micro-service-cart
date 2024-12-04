@@ -1,10 +1,17 @@
 package com.emazon.mscart.adapters.driving.http.controller;
 
 import com.emazon.mscart.adapters.driving.http.dto.request.ArticleCartRequest;
+import com.emazon.mscart.adapters.driving.http.dto.response.ArticleResponse;
 import com.emazon.mscart.adapters.driving.http.mapper.IArticleCartRequestMapper;
-import com.emazon.mscart.adapters.driving.http.utils.ArticleCartUtils;
+import com.emazon.mscart.adapters.driving.http.mapper.IArticleCartResponseMapper;
+import com.emazon.mscart.adapters.driven.jpa.mysql.util.ArticleCartUtils;
+import com.emazon.mscart.adapters.driving.http.utils.ValidateParametersConstants;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.Pattern;
 import com.emazon.mscart.domain.api.IArticleCartServicePort;
 import com.emazon.mscart.domain.model.ArticleCart;
+import com.emazon.mscart.domain.model.ArticleFilter;
+import com.emazon.mscart.domain.model.Pagination;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 public class CartRestController {
     private final IArticleCartServicePort articleCartServicePort;
     private final IArticleCartRequestMapper articleCartRequestMapper;
+    private final IArticleCartResponseMapper articleCartResponseMapper;
 
     @PreAuthorize("hasRole('CLIENT')")
     @Operation(summary = "Save an article", description = "Add a new article in the cart.")
@@ -34,9 +42,8 @@ public class CartRestController {
     })
     @PostMapping("/add-article")
     public ResponseEntity<Void> addArticleCart(@RequestBody ArticleCartRequest articleCartRequest) {
-        Long userId = ArticleCartUtils.extractUserId();
         ArticleCart articleCart = articleCartRequestMapper.toModel(articleCartRequest);
-        articleCartServicePort.addArticleCart(articleCart, userId);
+        articleCartServicePort.addArticleCart(articleCart);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -50,6 +57,29 @@ public class CartRestController {
     @DeleteMapping("/delete-article/{id}")
     public void deleteArticleCart(@PathVariable Long id) {
         articleCartServicePort.deleteArticleCart(id);
+    }
+
+
+    @PreAuthorize("hasRole('CLIENT')")
+    @GetMapping("/list-articles")
+    public ResponseEntity<Pagination<ArticleResponse>> getArticlesCart(
+            @Min(value = 0, message = ValidateParametersConstants.PAGE_NUMBER_NEGATIVE)
+            @RequestParam(defaultValue = "0") int page,
+
+            @Min(value = 1, message = ValidateParametersConstants.PAGE_SIZE_INVALID)
+            @RequestParam(defaultValue = "10") int size,
+
+            @Pattern(regexp = ValidateParametersConstants.SORT_DIRECTION_PATTERN, message = ValidateParametersConstants.INVALID_SORT_DIRECTION)
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+
+            @RequestParam(required = false) String categoryName,
+
+            @RequestParam(required = false) String brandName
+    ) {
+        Pagination<ArticleResponse> articles = articleCartResponseMapper
+                .toPaginationResponse(articleCartServicePort.getArticlesCart(new ArticleFilter(null, sortDirection, page, size, categoryName, brandName)));
+
+        return ResponseEntity.ok(articles);
     }
 
     @PreAuthorize("hasRole('CLIENT')")

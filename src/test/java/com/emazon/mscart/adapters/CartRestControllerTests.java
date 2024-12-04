@@ -5,6 +5,7 @@ import com.emazon.mscart.adapters.driven.jpa.mysql.mapper.IArticleCartEntityMapp
 import com.emazon.mscart.adapters.driving.http.controller.CartRestController;
 import com.emazon.mscart.adapters.driving.http.dto.request.ArticleCartRequest;
 import com.emazon.mscart.adapters.driving.http.mapper.IArticleCartRequestMapper;
+import com.emazon.mscart.adapters.driving.http.mapper.IArticleCartResponseMapper;
 import com.emazon.mscart.domain.api.IArticleCartServicePort;
 import com.emazon.mscart.domain.model.ArticleCart;
 import com.emazon.mscart.infraestructure.configuration.jwt.JwtAuthenticationFilter;
@@ -34,10 +35,13 @@ public class CartRestControllerTests {
     private MockMvc mockMvc;
 
     @MockBean
-    private IArticleCartServicePort cartServicePort;
+    private IArticleCartServicePort articleCartServicePort;
 
     @MockBean
     private IArticleCartRequestMapper articleCartRequestMapper;
+
+    @MockBean
+    private IArticleCartResponseMapper articleCartResponseMapper;
 
     @MockBean
     private JwtService jwtService;
@@ -49,20 +53,27 @@ public class CartRestControllerTests {
     private ObjectMapper objectMapper;
 
     @Test
-    void cartControllerTest() throws Exception {
+    void addArticleCartControllerTest() throws Exception {
+        // Crear el objeto de solicitud
         ArticleCartRequest articleCartRequest = new ArticleCartRequest(1L, 10L);
 
+        // Crear el modelo correspondiente a la solicitud
         ArticleCart articleCart = new ArticleCart(1L, 1L, 1L, 10L, null, null);
 
+        // Simular el comportamiento del mapper
         when(articleCartRequestMapper.toModel(any(ArticleCartRequest.class))).thenReturn(articleCart);
-        doNothing().when(cartServicePort).addArticleCart(any(ArticleCart.class), 1L);
 
+        // Simular el comportamiento del servicio
+        doNothing().when(articleCartServicePort).addArticleCart(any(ArticleCart.class));
+
+        // Ejecutar la solicitud POST y verificar el estado HTTP 201 (CREATED)
         mockMvc.perform(post("/cart/add-article")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(articleCartRequest))
-        ).andExpect(status().isCreated());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(articleCartRequest)))
+                .andExpect(status().isCreated());
 
+        // Verificar que el mapper y el servicio fueron invocados con los argumentos esperados
         verify(articleCartRequestMapper).toModel(any(ArticleCartRequest.class));
-        verify(cartServicePort).addArticleCart(any(ArticleCart.class), 1L);
+        verify(articleCartServicePort).addArticleCart(any(ArticleCart.class));
     }
 }

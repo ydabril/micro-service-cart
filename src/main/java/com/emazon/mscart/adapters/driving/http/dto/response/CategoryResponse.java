@@ -8,5 +8,4 @@ import lombok.Getter;
 public class CategoryResponse {
     private final Long id;
     private final String name;
-    private final String description;
 }

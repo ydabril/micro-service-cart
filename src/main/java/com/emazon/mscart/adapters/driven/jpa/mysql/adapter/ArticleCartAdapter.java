@@ -3,7 +3,11 @@ package com.emazon.mscart.adapters.driven.jpa.mysql.adapter;
 import com.emazon.mscart.adapters.driven.jpa.mysql.entity.ArticleCartEntity;
 import com.emazon.mscart.adapters.driven.jpa.mysql.mapper.IArticleCartEntityMapper;
 import com.emazon.mscart.adapters.driven.jpa.mysql.repository.ICartRepository;
+import com.emazon.mscart.adapters.driven.jpa.mysql.util.ArticleCartUtils;
+import com.emazon.mscart.domain.model.Article;
 import com.emazon.mscart.domain.model.ArticleCart;
+import com.emazon.mscart.domain.model.ArticleFilter;
+import com.emazon.mscart.domain.model.Pagination;
 import com.emazon.mscart.domain.spi.IArticleCartPersistencePort;
 import lombok.RequiredArgsConstructor;
 
@@ -46,6 +50,11 @@ public class ArticleCartAdapter implements IArticleCartPersistencePort {
     }
 
     @Override
+    public List<Long> getArticleIdsByUser(Long userId) {
+        return cartRepository.findArticleIdByUserId(userId);
+    }
+
+    @Override
     public Optional<ArticleCart> findById(Long id) {
         return  articleCartEntityMapper.toArticleOptional(cartRepository.findById(id));
     }
@@ -55,5 +64,10 @@ public class ArticleCartAdapter implements IArticleCartPersistencePort {
         return cartRepository.findByUserId(userId).stream()
                 .map(articleCartEntityMapper::toModel)
                 .toList();
+    }
+
+    @Override
+    public Long getUserId() {
+        return  ArticleCartUtils.extractUserId();
     }
 }

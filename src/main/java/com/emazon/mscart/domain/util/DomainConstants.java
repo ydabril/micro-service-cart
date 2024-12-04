@@ -6,4 +6,8 @@ public class DomainConstants {
     public static final int LIMIT_CATEGORIES_COUNT = 3;
     public static final int DEFAULT_COUNT_CATEGORIES = 0;
     public static  final int COUNT_CATEGORIES = 1;
+
+    public static final Long TOTAL_PRICE_DEFAULT = 0L;
+
+    public static final int NOT_STOCK_NUMBER = 0;
 }

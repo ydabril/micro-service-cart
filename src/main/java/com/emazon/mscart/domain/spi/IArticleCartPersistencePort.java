@@ -15,4 +15,8 @@ public interface IArticleCartPersistencePort {
     Optional<ArticleCart> findById(Long id);
 
     void deleteArticleCart(Long id);
+
+    Long getUserId();
+
+    List<Long> getArticleIdsByUser(Long userId);
 }

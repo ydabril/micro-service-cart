@@ -46,6 +46,7 @@ public class ControllerAdvisor {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
     }
 
+
     @ExceptionHandler(ArticleNotFoundException.class)
     public ResponseEntity<ExceptionResponse> handleArticleNotFoundException(ArticleNotFoundException exception) {
         return ResponseEntity.badRequest().body(new ExceptionResponse(

@@ -1,6 +1,5 @@
 package com.emazon.mscart.domain.model;
 
-import static java.util.Objects.requireNonNull;
 
 public class Brand {
     private final Long id;
